@@ -1,0 +1,52 @@
+// This pipeline scrapes pprof Go profiles from Alloy and sends them to Pyroscope.
+//
+// It requires the following environment variables to be set where Alloy is running:
+//   Required:
+//     * GCLOUD_RW_API_KEY: The Grafana Cloud API key with write access to Pyroscope.
+//   Optional:
+//     * ALLOY_ADDRESS: The address Alloy listens on. Defaults to 127.0.0.1:12345.
+pyroscope.scrape "alloy" {
+    targets = [
+        {
+            "__address__" = coalesce(
+                sys.env("ALLOY_ADDRESS"),
+                "127.0.0.1:12345",
+            ),
+            "service_name" = "alloy",
+        },
+    ]
+    forward_to = [pyroscope.write.grafana_cloud.receiver]
+
+    profiling_config {
+        profile.process_cpu {
+            enabled = true
+        }
+
+        profile.memory {
+            enabled = true
+        }
+
+        profile.mutex {
+            enabled = true
+        }
+
+        profile.block {
+            enabled = true
+        }
+
+        profile.goroutine {
+            enabled = true
+        }
+    }
+}
+
+pyroscope.write "grafana_cloud" {
+    endpoint {
+        url = "${profiles_url}"
+
+        basic_auth {
+            username = "${profiles_id}"
+            password = sys.env("GCLOUD_RW_API_KEY")
+        }
+    }
+}

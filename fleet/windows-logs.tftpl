@@ -1,0 +1,85 @@
+loki.process "logs_integrations_integrations_windows_exporter_application" {
+	forward_to = [loki.write.logs_integrations.receiver]
+
+	stage.json {
+		expressions = {
+			source = "source",
+		}
+	}
+
+	stage.labels {
+		values = {
+			source = null,
+		}
+	}
+}
+
+loki.relabel "logs_integrations_integrations_windows_exporter_application" {
+	forward_to = [loki.process.logs_integrations_integrations_windows_exporter_application.receiver]
+
+	rule {
+		source_labels = ["computer"]
+		target_label  = "instance"
+	}
+}
+
+loki.source.windowsevent "logs_integrations_integrations_windows_exporter_application" {
+	eventlog_name          = "Application"
+	xpath_query            = ""
+	poll_interval          = "0s"
+	use_incoming_timestamp = true
+	forward_to             = [loki.relabel.logs_integrations_integrations_windows_exporter_application.receiver]
+	labels                 = {
+		instance = constants.hostname,
+		job      = "integrations/windows_exporter",
+	}
+}
+
+loki.process "logs_integrations_integrations_windows_exporter_system" {
+	forward_to = [loki.write.logs_integrations.receiver]
+
+	stage.json {
+		expressions = {
+			source = "source",
+		}
+	}
+
+	stage.labels {
+		values = {
+			source = null,
+		}
+	}
+}
+
+loki.relabel "logs_integrations_integrations_windows_exporter_system" {
+	forward_to = [loki.process.logs_integrations_integrations_windows_exporter_system.receiver]
+
+	rule {
+		source_labels = ["computer"]
+		target_label  = "instance"
+	}
+}
+
+loki.source.windowsevent "logs_integrations_integrations_windows_exporter_system" {
+	eventlog_name          = "System"
+	xpath_query            = ""
+	poll_interval          = "0s"
+	use_incoming_timestamp = true
+	forward_to             = [loki.relabel.logs_integrations_integrations_windows_exporter_system.receiver]
+	labels                 = {
+		instance = constants.hostname,
+		job      = "integrations/windows_exporter",
+	}
+}
+
+loki.write "logs_integrations" {
+	endpoint {
+		url = "${logs_url}/loki/api/v1/push"
+
+		basic_auth {
+			username = "${logs_id}"
+			password = sys.env("GCLOUD_RW_API_KEY")
+		}
+	}
+	external_labels = {}
+}

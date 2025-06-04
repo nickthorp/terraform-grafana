@@ -1,0 +1,11 @@
+remotecfg {
+    id             = constants.hostname
+    url            = "${fm_url}"
+    attributes     = {"cluster" = "home", "namespace" = "nuggle", "env" = "PROD"}
+    poll_frequency = "60s"
+
+    basic_auth {
+        username = "${fm_id}"
+        password = sys.env("GCLOUD_RW_API_KEY")
+    }
+}
